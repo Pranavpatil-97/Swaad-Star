@@ -27,6 +27,8 @@ const businesses = {
     writingStyle: 'polite',
   },
 }
+const ADMIN = { email: 'pranavpatil0097@gmail.com', password: 'Admin@123' }
+let failedLogins = 0
 
 export async function mockAdapter(config) {
   const method = config.method.toLowerCase()
@@ -57,6 +59,32 @@ export async function mockAdapter(config) {
     })
   }
 
+    // ---- Admin ----
+  if (method === 'post' && url === '/admin/login') {
+    if (failedLogins >= 5) fail(config, 429, 'RATE_LIMITED', 'Too many attempts')
+    if (body.email === ADMIN.email && body.password === ADMIN.password) {
+      failedLogins = 0
+      sessionStorage.setItem('mock_admin', '1')
+      return ok(config, { accessToken: 'mock-token', admin: { email: ADMIN.email } })
+    }
+    failedLogins += 1
+    fail(config, 401, 'UNAUTHORIZED', 'Invalid email or password')
+  }
+
+  if (method === 'post' && url === '/admin/refresh') {
+    return sessionStorage.getItem('mock_admin') === '1'
+      ? ok(config, { accessToken: 'mock-token', admin: { email: ADMIN.email } })
+      : fail(config, 401, 'UNAUTHORIZED', 'No session')
+  }
+
+  if (method === 'post' && url === '/admin/logout') {
+    sessionStorage.removeItem('mock_admin')
+    return ok(config, { ok: true })
+  }
+
+  if (url.startsWith('/admin/') && config.headers?.get?.('Authorization') !== 'Bearer mock-token') {
+    fail(config, 401, 'UNAUTHORIZED', 'Please sign in')
+  }
   if (method === 'post' && url === '/events') return ok(config, { ok: true })
   if (method === 'post' && url === '/leads') return ok(config, { ok: true })
 
