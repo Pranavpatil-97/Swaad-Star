@@ -27,11 +27,19 @@ const businesses = {
     writingStyle: 'polite',
   },
 }
+const ADMIN = { email: 'pranavpatil0097@gmail.com', password: 'Admin@123' }
+let failedLogins = 0
+let adminBusiness = { ...businesses['spice-garden'] }
 
 export async function mockAdapter(config) {
   const method = config.method.toLowerCase()
   const url = config.url
-  const body = config.data ? JSON.parse(config.data) : {}
+  const body =
+    config.data instanceof FormData
+      ? Object.fromEntries(config.data)
+      : config.data
+        ? JSON.parse(config.data)
+        : {}
 
   await wait(400)
 
@@ -55,6 +63,54 @@ export async function mockAdapter(config) {
       draft: `Had a ${body.rating}-star visit. ${text.replace(/#\w+/g, '').trim()}. Overall, my honest experience.`,
       source: text.includes('#template') ? 'template' : 'ai',
     })
+  }
+
+  // ---- Admin ----
+  if (method === 'post' && url === '/admin/login') {
+    if (failedLogins >= 5) fail(config, 429, 'RATE_LIMITED', 'Too many attempts')
+    if (body.email === ADMIN.email && body.password === ADMIN.password) {
+      failedLogins = 0
+      sessionStorage.setItem('mock_admin', '1')
+      return ok(config, { accessToken: 'mock-token', admin: { email: ADMIN.email } })
+    }
+    failedLogins += 1
+    fail(config, 401, 'UNAUTHORIZED', 'Invalid email or password')
+  }
+
+  if (method === 'post' && url === '/admin/refresh') {
+    return sessionStorage.getItem('mock_admin') === '1'
+      ? ok(config, { accessToken: 'mock-token', admin: { email: ADMIN.email } })
+      : fail(config, 401, 'UNAUTHORIZED', 'No session')
+  }
+
+  if (method === 'post' && url === '/admin/logout') {
+    sessionStorage.removeItem('mock_admin')
+    return ok(config, { ok: true })
+  }
+
+  if (url.startsWith('/admin/') && config.headers?.get?.('Authorization') !== 'Bearer mock-token') {
+    fail(config, 401, 'UNAUTHORIZED', 'Please sign in')
+  }
+
+  if (url === '/admin/business' && method === 'get') return ok(config, adminBusiness)
+
+  if (url === '/admin/business' && method === 'put') {
+    if (body.slug === 'taken') fail(config, 400, 'VALIDATION_ERROR', 'That link name is already used')
+    const file = body.logo instanceof File ? body.logo : null
+    const old = adminBusiness.slug
+    adminBusiness = {
+      ...adminBusiness,
+      name: body.name,
+      slug: body.slug,
+      brandColor: body.brandColor,
+      googleReviewUrl: body.googleReviewUrl,
+      language: body.language,
+      writingStyle: body.writingStyle,
+      logoUrl: file ? URL.createObjectURL(file) : adminBusiness.logoUrl,
+    }
+    delete businesses[old]
+    businesses[adminBusiness.slug] = adminBusiness // so the guest page shows your changes
+    return ok(config, adminBusiness)
   }
 
   if (method === 'post' && url === '/events') return ok(config, { ok: true })
