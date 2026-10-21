@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FAF5EC;
+  --color-cream-alt: #F2E9D8;
+  --color-charcoal: #1F1B16;
+  --color-charcoal-soft: #4A433A;
+  --color-terracotta: #C8553D;
+  --color-terracotta-dark: #A8432E;
+  --color-leaf: #2F4A3A;
+  --color-saffron: #E8A317;
+  --color-line: #E4DAC8;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+}
+
+:root {
+  --brand: #C8553D; /* overwritten from the API on the guest page */
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
