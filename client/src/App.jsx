@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
-import api from './api/client'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+const Landing = lazy(() => import('./pages/Landing'))
+const ReviewPage = lazy(() => import('./pages/ReviewPage'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const AdminApp = lazy(() => import('./pages/admin/AdminApp'))
 
 export default function App() {
-  const [biz, setBiz] = useState(null)
-  useEffect(() => { api.get('/business/spice-garden').then((r) => setBiz(r.data)) }, [])
   return (
-    <main className="p-6">
-      <h1 className="text-3xl text-terracotta">Swaad Star</h1>
-      <p className="font-body text-charcoal-soft">{biz ? biz.name : 'Loading...'}</p>
-    </main>
+    <BrowserRouter>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/r/:slug" element={<ReviewPage />} />
+          <Route path="*" element={<NotFound />} />
+          <Route path="/admin/*" element={<AdminApp />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   )
 }
