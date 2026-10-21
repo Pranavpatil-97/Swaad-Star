@@ -29,11 +29,17 @@ const businesses = {
 }
 const ADMIN = { email: 'pranavpatil0097@gmail.com', password: 'Admin@123' }
 let failedLogins = 0
+let adminBusiness = { ...businesses['spice-garden'] }
 
 export async function mockAdapter(config) {
   const method = config.method.toLowerCase()
   const url = config.url
-  const body = config.data ? JSON.parse(config.data) : {}
+  const body =
+    config.data instanceof FormData
+      ? Object.fromEntries(config.data)
+      : config.data
+        ? JSON.parse(config.data)
+        : {}
 
   await wait(400)
 
@@ -59,7 +65,7 @@ export async function mockAdapter(config) {
     })
   }
 
-    // ---- Admin ----
+  // ---- Admin ----
   if (method === 'post' && url === '/admin/login') {
     if (failedLogins >= 5) fail(config, 429, 'RATE_LIMITED', 'Too many attempts')
     if (body.email === ADMIN.email && body.password === ADMIN.password) {
@@ -85,6 +91,28 @@ export async function mockAdapter(config) {
   if (url.startsWith('/admin/') && config.headers?.get?.('Authorization') !== 'Bearer mock-token') {
     fail(config, 401, 'UNAUTHORIZED', 'Please sign in')
   }
+
+  if (url === '/admin/business' && method === 'get') return ok(config, adminBusiness)
+
+  if (url === '/admin/business' && method === 'put') {
+    if (body.slug === 'taken') fail(config, 400, 'VALIDATION_ERROR', 'That link name is already used')
+    const file = body.logo instanceof File ? body.logo : null
+    const old = adminBusiness.slug
+    adminBusiness = {
+      ...adminBusiness,
+      name: body.name,
+      slug: body.slug,
+      brandColor: body.brandColor,
+      googleReviewUrl: body.googleReviewUrl,
+      language: body.language,
+      writingStyle: body.writingStyle,
+      logoUrl: file ? URL.createObjectURL(file) : adminBusiness.logoUrl,
+    }
+    delete businesses[old]
+    businesses[adminBusiness.slug] = adminBusiness // so the guest page shows your changes
+    return ok(config, adminBusiness)
+  }
+
   if (method === 'post' && url === '/events') return ok(config, { ok: true })
   if (method === 'post' && url === '/leads') return ok(config, { ok: true })
 

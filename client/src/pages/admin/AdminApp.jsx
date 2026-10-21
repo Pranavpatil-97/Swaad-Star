@@ -3,6 +3,7 @@ import { AuthProvider } from '../../hooks/useAuth'
 import ProtectedRoute from '../../components/ProtectedRoute'
 import AdminLayout from './AdminLayout'
 import Login from './Login'
+import Settings from './Settings'
 
 function Dashboard() {
   return (
@@ -26,6 +27,7 @@ export default function AdminApp() {
           <Route element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="*" element={<ComingSoon />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
       </Routes>
