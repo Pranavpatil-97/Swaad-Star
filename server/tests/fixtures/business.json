@@ -1,0 +1,8 @@
+{
+  "name": "Spice Garden",
+  "language": "en",
+  "writingStyle": "casual",
+  "aiProvider": "mock",
+  "aiModel": "test-model",
+  "apiKey": "test-key"
+}
